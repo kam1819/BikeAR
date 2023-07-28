@@ -35,6 +35,7 @@ stages:
   - job: Execute
     displayName: 'Run R script'
     steps:
-    - script: Rscript temp_prediction_with_ts.Rmd
+    - script: Rscript "C:\USERS\KMELTO~1\DESKTOP\TEMPPR~1.RMD"
       displayName: 'Execute R script'
+
 
