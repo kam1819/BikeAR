@@ -18,10 +18,27 @@ steps:
     echo See https://aka.ms/yaml
   displayName: 'Run a multi-line script'
 
-steps:
-- script: Rscript -e "install.packages(c('caret', 'readxl','rpart','dplyr','rpart.plot', 'ggplot2','tidyverse','zoo','lubridate','forecast','faraway','xts'), repos='http://cran.rstudio.com/')"
-  displayName: 'Install R packages'
+trigger:
+- main  # Replace 'main' with the branch name you want to trigger the pipeline.
 
-steps:
-- script: Rscript "C:\Users\kmelton\OneDrive - High Technology Foundation\Desktop\temp prediction with ts.Rmd"
-  displayName: 'Execute R script'
+pool:
+  vmImage: 'ubuntu-latest'  # Replace with the appropriate agent image (e.g., windows-latest, macos-latest) if needed.
+
+stages:
+- stage: Build
+  displayName: 'Build and Install R Dependencies'
+  jobs:
+  - job: Build
+    displayName: 'Build R Environment'
+    steps:
+    - script: Rscript -e "install.packages(c('caret', 'readxl','rpart','dplyr','rpart.plot', 'ggplot2','tidyverse','zoo','lubridate','forecast','faraway','xts'), repos='http://cran.rstudio.com/')"
+      displayName: 'Install R packages'
+
+- stage: ExecuteRCode
+  displayName: 'Execute R Code'
+  jobs:
+  - job: Execute
+    displayName: 'Run R script'
+    steps:
+    - script: "temp prediction with ts.Rmd"
+      displayName: 'Execute R script'
