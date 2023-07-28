@@ -35,5 +35,6 @@ stages:
   - job: Execute
     displayName: 'Run R script'
     steps:
-    - script: "temp prediction with ts.Rmd"
+    - script: Rscript temp_prediction_with_ts.Rmd
       displayName: 'Execute R script'
+
