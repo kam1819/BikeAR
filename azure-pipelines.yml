@@ -26,7 +26,7 @@ stages:
   - job: Build
     displayName: 'Build R Environment'
     steps:
-    - script: Rscript -e "install.packages(c('caret', 'readxl','rpart','dplyr','rpart.plot', 'ggplot2','tidyverse','zoo','lubridate','forecast','faraway','xts'), repos='http://cran.rstudio.com/')"
+    - script: Rscript -e "install.packages(c('caret','readxl','rpart','dplyr','rpart.plot','ggplot2','tidyverse','zoo','lubridate','forecast','faraway','xts'), repos='http://cran.rstudio.com/')"
       displayName: 'Install R packages'
 
 - stage: ExecuteRCode
