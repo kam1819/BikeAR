@@ -1,0 +1,542 @@
+---
+title: "Biking Example"
+author: "Kelly Melton"
+date: "2023-06-18"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+library(caret)
+library(readxl)
+library(rpart)
+library(dplyr)
+library(rpart.plot)
+library(ggplot2)
+library(tidyverse)
+library(zoo)
+library(lubridate)
+library(forecast)
+library(faraway)
+library(xts)
+
+BikeEx <- read_excel("C:/Users/kmelton/OneDrive - High Technology Foundation/Desktop/Biking/biking_data.xlsx")
+
+summary(BikeEx)
+```
+
+
+```{r}
+BikeEx$dteday <- ymd(BikeEx$dteday)
+
+plot(BikeEx$dteday,BikeEx$windspeed)
+plot(BikeEx$dteday,BikeEx$temp)
+plot(BikeEx$dteday,BikeEx$hum)
+plot(BikeEx$dteday,BikeEx$weathersit)
+
+
+
+plot(BikeEx$cnt,BikeEx$windspeed)
+plot(BikeEx$cnt,BikeEx$temp)
+plot(BikeEx$cnt,BikeEx$hum)
+plot(BikeEx$cnt,BikeEx$weathersit)
+```
+
+
+```{r}
+cordata = BikeEx[,c(9,10,12,13,16)]
+corr <- round(cor(cordata), 1)
+corr
+
+```
+
+```{r}
+library(ggcorrplot)
+ggcorrplot(corr, hc.order = TRUE, type = "lower", lab = TRUE, lab_size = 3, method="circle", colors = c("yellow", "orange", "red"), outline.color = "gray", show.legend = TRUE, show.diag = FALSE, title="Correlation")
+```
+
+
+```{r}
+data=BikeEx[,c(9,10,12,13,16)]
+scaled_bike <- as.data.frame(scale(data))
+summary(scaled_bike)
+```
+
+```{r}
+m1<-glm(cnt~windspeed + temp + hum + weathersit, data=scaled_bike)
+summary(m1)
+plot(m1)
+
+#When interpreting the coefficients for TMAX and TMIN, it is more appropriate to focus on the incremental change in the response variable (COUNT) associated with a one-unit increase in these temperature variables, while holding other variables constant. For example, a coefficient of 4.7289 for TMAX suggests that, on average, for every one-unit increase in the maximum temperature, the COUNT variable increases by 4.7289 units, assuming all other variables in the model remain the same.
+
+#It's important to keep in mind the limitations of interpreting coefficients in the presence of complex variables like temperature, where zero is not the baseline reference point.
+```
+```{r}
+
+# Creating a new dataframe
+bikedf<- data.frame(scaled_bike)
+
+
+# Example prediction for new_data_frame
+
+predictions <- predict(m1, newdata = bikedf, type = "response")
+summary(predictions)
+
+```
+```{r}
+set.seed(300)
+
+smplbike <- sample(1:nrow(scale_data), size=round(0.8*nrow(scale_data)), replace=FALSE)
+
+BikeExtrain <- scaled_bike[samp,]
+BikeExtest <- scaled_bike[-samp,]
+
+dim(BikeExtrain)
+dim(BikeExtest)
+summary(BikeExtrain)
+
+
+```
+```{r}
+m2<-glm(cnt ~ windspeed + temp + hum + weathersit, data=BikeExtrain)
+summary(m2)
+plot(m2)
+```
+
+
+```{r}
+predict <- predict(m2, BikeExtrain, type = 'response')
+table_mat <- table(BikeExtrain$cnt, predict > 0.5)
+table_mat
+```
+
+
+```{r}
+accuracy_Test <- sum(diag(table_mat)) / sum(table_mat)
+accuracy_Test
+```
+
+```{r}
+library(xts)
+library(tsbox)
+
+#xts will create a time series object
+historical = xts(BikeWV[,c("temp","hum","windspeed","weathersit")],order.by=as.Date(BikeEx$dteday))
+
+#na.fill ensures there are no missing dates which will be needed during decomposition 
+historical = na.fill(historical, "extend")
+
+#window sets up dates to be aggregated into months later in analysis
+historical = window(historical, start=as.Date("2011-01-01"), end=as.Date("2012-12-31"))
+
+```
+
+
+
+```{r}
+
+# plot the max and min temp and dates to see if there are dips and jumps, will use an additive model later on if there are dips/jumps
+
+
+plot(ts_ts(historical$hum), col="pink", bty="n", las=1, fg=NA, 
+	ylim=c(-21, 305), ylab="Humidity")
+
+lines(ts_ts(historical$temp), col="blue")
+
+grid(nx=NA, ny=NULL, lty=1, col="gray")
+
+legend("topright", fill=c("pink)
+	legend=c("temp", "hum"), bg="white"))
+```
+
+```{r}
+
+barplot(historical$PRCP, border=NA, col="blue", ylim=c(0, 700),
+	space=0, bty="n", las=1, fg=NA, ylab="Daily Rainfall (10th/mm)")
+
+grid(nx=NA, ny=NULL, lty=1)
+
+```
+
+```{r}
+
+barplot(historical$TMAX, border=NA, col="blue", ylim=c(0, 400),
+	space=0, bty="n", las=1, fg=NA, ylab="Max Temp 10ths/C")
+
+grid(nx=NA, ny=NULL, lty=1)
+
+```
+
+
+```{r}
+
+barplot(historical$TMIN, border=NA, col="blue", ylim=c(0, 250),
+	space=0, bty="n", las=1, fg=NA, ylab="MinTemp C")
+
+grid(nx=NA, ny=NULL, lty=1)
+
+```
+
+
+
+
+
+
+```{r}
+
+summary(historical)
+
+```
+
+
+
+
+```{r}
+# look for dates with historical weather conditions for each attribute
+
+historical[historical$TMIN == min(historical$TMIN)]
+
+historical[historical$TMAX == min(historical$TMAX)]
+
+historical[historical$PRCP == min(historical$PRCP)]
+
+historical[historical$SNOW == min(historical$SNOW)]
+
+```
+
+```{r}
+# look for dates with historical weather conditions for each attribute
+
+historical[historical$TMIN == max(historical$TMIN)]
+
+historical[historical$TMAX == max(historical$TMAX)]
+
+historical[historical$PRCP == max(historical$PRCP)]
+
+historical[historical$SNOW == max(historical$SNOW)]
+
+```
+
+
+
+```{r}
+
+sum(is.na(historical$TMAX))
+class(historical$TMAX)
+ts_data <- ts(historical$TMAX, frequency = 365)
+
+
+
+#Decomposition is used to breakdown where seasonality exists
+
+decomposition = stl(ts_ts(historical$TMAX), s.window=365, t.window=2190)
+
+plot(decomposition)
+
+summary(decomposition$time.series[,"trend"])
+
+```
+
+
+
+
+```{r}
+
+#Monthly breakdown of historical data for precipitation
+
+months = split(as.numeric(historical$PRCP), historical$MONTH)
+
+sapply(months, summary)
+
+```
+
+
+```{r}
+
+#Monthly breakdown of historical data for average wind speed 
+
+months = split(as.numeric(historical$AWND), historical$MONTH)
+
+sapply(months, summary)
+
+```
+
+
+
+```{r}
+#Decomposition is used to breakdown where seasonality exists
+
+decomposition = stl(ts_ts(historical$TMAX), s.window=365, t.window=2190)
+
+plot(decomposition)
+
+summary(decomposition$time.series[,"trend"])
+
+```
+
+
+For max temp trend line there is an increase of 0.81 degrees C.
+(0.81 * 365/6) = 49.27 tenths of degrees C (49.27/10 = 4.92) or an average daily INCREASE in max temp of 4.92 degrees C per day. 
+
+
+```{r}
+
+decomposition = stl(ts_ts(historical$PRCP), s.window=365, t.window=2190)
+
+plot(decomposition)
+
+summary(decomposition$time.series[,"trend"])
+
+```
+
+
+For precipitation, there is a daily decrease in the trend line of -30.68. Using the data description for this parameter's measurements, and the formula above, this translates to an average daily DECREASE in daily precipitation of 18.66 mm (0.73 in). 
+
+The data begins in 2017, the year of a historic weather event. The decrease is expected. 
+
+
+```{r}
+
+decomposition = stl(ts_ts(historical$TMIN), s.window=365, t.window=2190)
+
+plot(decomposition)
+
+summary(decomposition$time.series[,"trend"])
+
+```
+
+
+Min temp shows average daily DECREASE of 2.85 degrees C.
+
+
+```{r}
+
+#the mean function is used to smooth randomness and note trends. 
+
+monthly.tmax = period.apply(historical$TMAX, INDEX = seq(1, nrow(historical) - 1, 30.4305), FUN = mean)
+
+plot(ts_ts(monthly.tmax), col="red", ylim=c(-21, 400), 
+	lwd=3, bty="n", las=1, fg=NA, ylab="TMAX (C)")
+
+grid(nx=NA, ny=NULL, lty=1)
+```
+
+
+```{r}
+
+monthly.prcp = period.apply(historical$PRCP, INDEX = seq(1, nrow(historical) - 1, 30.4305), FUN = mean)
+
+plot(ts_ts(monthly.prcp), col="green", 
+	lwd=3, bty="n", las=1, fg=NA, ylab="Monthly Precipitation (10th/mm)")
+
+grid(nx=NA, ny=NULL, lty=1)
+
+```
+
+
+```{r}
+
+#Show extremes v. average with area plots
+#Max = red
+#Avg = yellow
+#Min = blue
+
+tmax.mean = period.apply(historical$TMAX, INDEX = seq(1, nrow(historical) - 1, 30.4305), FUN = mean)
+
+tmax.max = period.apply(historical$TMAX, INDEX = seq(1, nrow(historical) - 1, 30.4305), FUN = max)
+
+tmin.mean = period.apply(historical$TMIN, INDEX = seq(1, nrow(historical) - 1, 30.4305), FUN = mean)
+
+tmin.min = period.apply(historical$TMIN, INDEX = seq(1, nrow(historical) - 1, 30.4305), FUN = min)
+
+tmax.area = c(as.numeric(tmax.max), rev(as.numeric(tmax.mean)))
+tavg.area = c(as.numeric(tmax.mean), rev(as.numeric(tmin.mean)))
+tmin.area = c(as.numeric(tmin.mean), rev(as.numeric(tmin.min)))
+
+indices = c(index(ts_ts(tmax.mean)), rev(index(ts_ts(tmax.mean))))
+
+plot(NA, xlim=range(indices), ylim=c(-20, 100), 
+	lwd=3, bty="n", las=1, fg=NA, ylab="Monthly Temperatures (C)")
+
+polygon(indices, tmax.area, border=NA, col="red")
+polygon(indices, tavg.area, border=NA, col="yellow")
+polygon(indices, tmin.area, border=NA, col="blue")
+
+grid(nx=NA, ny=NULL, lty=1)
+```
+
+
+```{r}
+library(forecast)
+
+# additive model using training data to predict future max temps
+
+training.data = period.apply(historical$TMAX, seq(1, nrow(historical) - 1, 30.4305), max)
+
+#h=60 indicates forecasting the next 5 years
+
+model.tmax = hw(ts_ts(training.data), h=60)
+
+```
+
+
+```{r}
+plot(model.tmax, lwd=3, bty="n", las=1, fg=NA)
+
+grid(nx=NA, ny=NULL, lty=1)
+```
+
+
+The blue line is the trend line and the gray areas represent possible values based on the training data. 
+
+
+```{r}
+
+# three year forecast for max temp
+
+model.tmax = hw(ts_ts(training.data), h=36)
+
+plot(model.tmax, lwd=3, bty="n", las=1, fg=NA)
+
+grid(nx=NA, ny=NULL, lty=1)
+```
+
+
+```{r}
+#precipitation forecast for next five years according to the additive model
+
+training.data = period.apply(historical$PRCP, seq(1, nrow(historical) - 1, 30.4305), max)
+
+model.tprcp = hw(ts_ts(training.data), h=36)
+
+```
+
+
+```{r}
+
+plot(model.tprcp, lwd=3, bty="n", las=1, fg=NA)
+
+grid(nx=NA, ny=NULL, lty=1)
+
+```
+
+
+The forecasted precipitation is more difficult to predict with this model presumably due to the extreme coastal weather the state experiences.
+
+
+```{r}
+
+#ARIMA models use a deeper analysis of training data
+#these models take time to run
+
+training.data = ts_ts(historical$TMAX)
+
+parameters = auto.arima(training.data)
+
+parameters
+```
+
+
+```{r}
+
+# three year max temp forecast measured in 10ths of degrees C
+
+arima.model = arima(training.data, order = c(5,0,1), seasonal = list(order=c(0,1,0), period=365))
+
+arima.tmax = forecast(arima.model, 2190)
+
+plot(arima.tmax, lwd=3, bty="n", las=1, fg=NA, 
+	xlim=c(2017, 2026), ylab="Monthly High Temperature (C)")
+
+grid(nx=NA, ny=NULL, lty=1)
+```
+
+
+```{r}
+historical$WT04 = (historical$TMAX + historical$TMIN) / 2
+
+historical$HDD = ifelse(historical$WT04 < 65, 65 - historical$WT04, 0)
+
+historical$CDD = ifelse(historical$WT04 > 65, historical$WT04 - 65, 0)
+```
+
+
+```{r}
+monthly.cdd = period.apply(historical$CDD, INDEX = seq(1, nrow(historical) - 1, 30.4305), FUN = sum)
+
+monthly.hdd = period.apply(historical$HDD, INDEX = seq(1, nrow(historical) - 1, 30.4305), FUN = sum)
+
+barplot(merge.xts(monthly.cdd, monthly.hdd), 
+	col=c("blue", "yellow"), las=1, fg="white",
+	space=0, border=NA)
+
+grid(nx=NA, ny=NULL, lty=1)
+
+legend(x="topright", fill=c("blue", "yellow"), legend=c("CDD", "HDD"), bg="white")
+```
+
+
+```{r}
+decomposition = stl(ts_ts(historical$CDD), s.window=365, t.window=7001)
+
+plot(decomposition)
+```
+
+
+```{r}
+decomposition = stl(ts_ts(historical$HDD), s.window=365, t.window=7001)
+
+plot(decomposition)
+```
+
+
+```{r}
+historical$TAVG = (historical$TMAX + historical$TMIN) / 2
+
+monthly.tavg = period.apply(historical$TAVG, INDEX = seq(1, nrow(historical) - 1, 30.4305), FUN = mean)
+
+estimate.hdd = ifelse(monthly.tavg < 65, 65 - monthly.tavg, 0) * 30
+
+estimate.cdd = ifelse(monthly.tavg > 65, monthly.tavg - 65, 0) * 30
+
+barplot(merge.xts(estimate.cdd, estimate.hdd), 
+	col=c("blue", "yellow"), las=1, fg="white",
+	space=0, border=NA)
+
+grid(nx=NA, ny=NULL, lty=1)
+
+legend(x="topright", fill=c("blue", "yellow"), legend=c("CDD", "HDD"), bg="white")
+```
+
+
+```{r}
+
+historical$PRCP = ifelse(historical$PRCP > 1, 1, 0)
+
+rain = period.apply(historical$PRCP, INDEX = seq(1, nrow(historical) - 1, 365.25), FUN = sum)
+
+plot(ts_ts(rain), col="blue", 
+	lwd=3, bty="n", las=1, fg=NA, 
+	ylab="Annual Days with High Precipitation")
+
+grid(nx=NA, ny=NULL, lty=1)
+
+summary(as.numeric(rain))
+
+```
+
+
+```{r}
+decomposition = stl(ts_ts(historical$TMIN), s.window=365, t.window=7001)
+
+plot(decomposition)
+```
+
+
+``` {r}
+saveRDS(historical, "2017-2022-historical.rds")
+```
