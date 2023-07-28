@@ -18,11 +18,6 @@ steps:
     echo See https://aka.ms/yaml
   displayName: 'Run a multi-line script'
 
-trigger:
-- main  # Replace 'main' with the branch name you want to trigger the pipeline.
-
-pool:
-  vmImage: 'ubuntu-latest'  # Replace with the appropriate agent image (e.g., windows-latest, macos-latest) if needed.
 
 stages:
 - stage: Build
