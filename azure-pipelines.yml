@@ -19,7 +19,7 @@ steps:
   displayName: 'Run a multi-line script'
 
 
-stages:
+stages
 - stage: Build
   displayName: 'Build and Install R Dependencies'
   jobs:
