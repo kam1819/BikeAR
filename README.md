@@ -1,0 +1,3 @@
+The BikeAR project was developed for a professor taking part in a fellowship the foundation I work for supports. The professor had an interest in outdoor recreation, mountain biking in particular. 
+Bentonville AR was chosen as the subject location due to its large mountain biking presence. Using NOAA historical weather data for Bentonville, and a dataset for CityBike rentals in NYC, I put together an example of how weather data could benefit a mountain biking outfitter in Bentonville. 
+The project resulted in a real-world use case in which a bike shop owner found through the student's analysis, if he adds more RV hookups to his campground, he can increase profits. There were also findings related to the kitchen items being sold during certain weather conditions. 
